@@ -32,16 +32,16 @@ public class InfrastructureStack extends Stack {
     public InfrastructureStack(final Construct parent, final String id, final StackProps props) {
         super(parent, id, props);
 
-//        Table moviesTable = new Table(this, "MoviesTable", TableProps.builder()
-//                .tableName("MoviesTable")
-//                .partitionKey(Attribute.builder().type(AttributeType.STRING)
-//                        .name("PK").build())
-//                .build());
+        Table moviesTable = new Table(this, "MoviesTable", TableProps.builder()
+                .tableName("books")
+                .partitionKey(Attribute.builder().type(AttributeType.STRING)
+                        .name("id").build())
+                .build());
 
-        Function productFunction = new Function(this, "ProductFunction", FunctionProps.builder()
+        Function bookFunction = new Function(this, "MNBookFunction", FunctionProps.builder()
                 .runtime(Runtime.PROVIDED_AL2)
-                .code(Code.fromAsset("../target/"))
-                .handler("com.graalvmonlambda.product.ProductRequestHandler")
+                .code(Code.fromAsset("../software/target/function.zip"))
+                .handler("example.micronaut.BookRequestHandler")
                 .memorySize(256)
                 .logRetention(RetentionDays.ONE_WEEK)
                 .tracing(Tracing.ACTIVE)
@@ -55,10 +55,12 @@ public class InfrastructureStack extends Stack {
                 .path("/book")
                 .methods(singletonList(HttpMethod.POST))
                 .integration(new LambdaProxyIntegration(LambdaProxyIntegrationProps.builder()
-                        .handler(productFunction)
+                        .handler(bookFunction)
                         .payloadFormatVersion(PayloadFormatVersion.VERSION_2_0)
                         .build()))
                 .build());
+
+        moviesTable.grantWriteData(bookFunction);
 
         CfnOutput apiUrl = new CfnOutput(this, "ApiUrl", CfnOutputProps.builder()
                 .exportName("ApiUrl")
